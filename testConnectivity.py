@@ -480,9 +480,12 @@ def testConnectivity(args):
             dict_vfat3CalInfo[ohN] = getVFAT3CalInfo(dict_chipIDs[ohN],debug=args.debug)
             if args.debug:
                 print("dict_vfat3CalInfo[{0}]:\n{1}".format(ohN,dict_vfat3CalInfo[ohN]))
-            
-            # Write IREF
+
+            #First, set the bias current for all VFATs to a standard value. Then, for each VFAT, check if that VFAT was found in the database. If it was found, then its bias current is replaced with the value from the database. If it was not found e.g. due to a bit flip in the chip ID, then the bias current is unchanged from the standard value.
             print("Setting CFG_IREF for all VFATs on OH{0}".format(ohN))
+            vfatBoard.biasAllVFATs(dict_vfatMask[ohN])    
+                
+
             for idx,vfat3CalInfo in dict_vfat3CalInfo[ohN].iterrows():
                 if((dict_vfatMask[ohN] >> vfat3CalInfo['vfatN']) & 0x1):
                     continue
