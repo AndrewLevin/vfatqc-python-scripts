@@ -33,7 +33,7 @@ class gemGenericTree(object):
         self.gemTree.Branch( 'slot', self.slot, 'slot/I' )
 
         self.detName = r.vector('string')()
-        self.detName.push_back(detName)
+        self.detName.push_back("X-X-X-X-X")        
         self.gemTree.Branch( 'detName', self.detName)
         
         self.utime = array( 'i', [ 0 ] )
