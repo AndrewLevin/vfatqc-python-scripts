@@ -350,7 +350,7 @@ def iterTrim(args):
     # Determine number of OH's
     cardName = getCardName(args.shelf,args.slot)
     amcBoard = HwAMC(cardName, args.debug)
-    print('opened connection')
+    print("opened connection")
 
     # Get DATA_PATH
     dataPath = os.getenv("DATA_PATH")
