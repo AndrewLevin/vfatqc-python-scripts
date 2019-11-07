@@ -168,6 +168,12 @@ if __name__ == '__main__':
     parser.add_argument("-d","--debug", action="store_true", help="Prints additional debugging information")
     parser.add_argument("-l","--latency", type=int, help="CFG_LATENCY value to be used",default=33)
     parser.add_argument("-m","--maxIter", type=int, help="Maximum number of iterations to perform (e.g. number of scurves to take)", default=4)
+    
+    parser.add_argument("--sigmaOffset", type=int, help="Will align the mean - sigmaOffset*sigma", default=0)
+    parser.add_argument("--highTrimCutoff", type=int, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=63)
+    parser.add_argument("--highTrimWeight", type=int, help="Will apply this weight to channels that have a trim value above the cutoff", default=50)    
+    parser.add_argument("--highNoiseCut", type=float, default=1.5, help="Threshold in fC for masking the channel due to high noise")
+    
     parser.add_argument("-n","--nevts",type=int,default=100,help="Number of events for each scan position")
     parser.add_argument("-p","--pulseStretch", type=int, help="CFG_PULSE_STRETCH value to be used",default=3)
     parser.add_argument("-v","--vfatmask",type=parseInt,default=0x0,help="Specifies which VFATs, if any, should be masked.  Here this is a 24 bit number, where a 1 in the N^th bit means ignore the N^th VFAT.")
@@ -290,13 +296,40 @@ if __name__ == '__main__':
             print("scurveFitResults[0][vfat] = {}".format(scurveFitResults[0][vfat]))
             print("len(scurveFitResults[0][vfat]) = {}".format(len(scurveFitResults[0][vfat])))
 
-            # Determine scurve threshold statistics (do not include 0 values)
-            scurveFitResultsNonzero = scurveFitResults[0][vfat][scurveFitResults[0][vfat]!=0]
-            if (len(scurveFitResultsNonzero) > 0):
-                avgScurveMean = np.mean(scurveFitResults[0][vfat][scurveFitResults[0][vfat]!=0])
-                maxScurveMean = np.max(scurveFitResults[0][vfat][scurveFitResults[0][vfat]!=0])
-                minScurveMean = np.min(scurveFitResults[0][vfat][scurveFitResults[0][vfat]!=0])
-                stdScurveMean = np.std(scurveFitResults[0][vfat][scurveFitResults[0][vfat]!=0])
+            # Get the last trim DAC and Polarity values
+            lastTrimPols = dict_chanRegArray[iterNum-1]["ARM_TRIM_POLARITY"][vfat*128:(vfat+1)*128]
+            lastTrimDACs = dict_chanRegArray[iterNum-1]["ARM_TRIM_AMPLITUDE"][vfat*128:(vfat+1)*128]
+            
+            # Apply the correct sign based on polarity to the last trim DAC values
+            lastTrimDACs = np.multiply(pow(-1,lastTrimPols),lastTrimDACs)
+
+            toAlignValues = []
+            toAlignWeights = []            
+            
+            for ch in range(0,128):
+                if scurveFitResults[1][vfat][ch] > args.highNoiseCut:
+                    continue
+                
+                if iterNum > 1 and lastTrimDACs[ch] > args.highTrimCutoff: 
+                    toAlignValues.append(scurveFitResults[0][vfat][ch] + args.sigmaOffset*scurveFitResults[1][vfat][ch])
+                    toAlignWeights.append(args.highTrimWeight)
+                else:
+                    toAlignValues.append(scurveFitResults[0][vfat][ch] + args.sigmaOffset*scurveFitResults[1][vfat][ch])
+                    toAlignWeights.append(1)
+
+            if len(toAlignValues) > 0:
+                weightedSum=0.0
+                sumOfWeights=0.0
+                for i in range(len(toAlignValues)):
+                    weightedSum+=toAlignValues[i]*toAlignWeights[i]
+                    sumOfWeights+=toAlignWeights[i]
+
+                weightedMean = weightedSum/sumOfWeights    
+                    
+                maxToAlignValues = np.max(toAlignValues)
+                minToAlignValues = np.min(toAlignValues)
+                stdToAlignValues = np.std(toAlignValues)
+                avgToAlignValues = np.mean(toAlignValues)                
             else:
                 printYellow("Warning: all scurve means are zoer for VFAT{} which is not in vfatmask 0x{:x}. Skipping".format(vfat,args.vfatmask))
                 dict_chanRegArray[iterNum]["ARM_TRIM_POLARITY"][vfat*128:(vfat+1)*128] = dict_chanRegArray[iterNum-1]["ARM_TRIM_POLARITY"][vfat*128:(vfat+1)*128]
@@ -317,12 +350,12 @@ if __name__ == '__main__':
                 continue
 
             # Update maxSpread?
-            if (maxScurveMean - minScurveMean) > maxSpread:
-                maxSpread = (maxScurveMean - minScurveMean)
+            if (maxToAlignValues - minToAlignValues) > maxSpread:
+                maxSpread = (maxToAlignValues - minToAlignValues)
 
             # See equation on step 3 of:
             # https://indico.cern.ch/event/838248/contributions/3515801/attachments/1887448/3112771/VFAT3b_trim.pdf
-            trimDeltas = np.round(avgScurveMean - scurveFitResults[0][vfat]) * 15
+            trimDeltas = np.round(weightedMean - (scurveFitResults[0][vfat]+args.sigmaOffset*scurveFitResults[1][vfat])) * 15
 
             # Determine number of trimmed channels (e.g. trimDeltas == 0)
             uniqueVals, counts = np.unique(trimDeltas, return_counts=True)
@@ -331,13 +364,6 @@ if __name__ == '__main__':
                 n_trimmed = dict_trimValsByCounts[0]
             except KeyError:
                 n_trimmed = 0
-
-            # Get the last trim DAC and Polarity values
-            lastTrimPols = dict_chanRegArray[iterNum-1]["ARM_TRIM_POLARITY"][vfat*128:(vfat+1)*128]
-            lastTrimDACs = dict_chanRegArray[iterNum-1]["ARM_TRIM_AMPLITUDE"][vfat*128:(vfat+1)*128]
-            
-            # Apply the correct sign based on polarity to the last trim DAC values
-            lastTrimDACs = np.multiply(pow(-1,lastTrimPols),lastTrimDACs)
 
             # Add trimDeltas to previous trimDACs
             currentTrimDACs = lastTrimDACs + trimDeltas
@@ -377,11 +403,11 @@ if __name__ == '__main__':
                     {   "iterN":iterNum,
                         "vfatN":vfat,
                         "vfatID":vfatIDvals[vfat],
-                        "avg":avgScurveMean,
-                        "std":stdScurveMean,
-                        "max":maxScurveMean,
-                        "min":minScurveMean,
-                        "p2p":maxScurveMean-minScurveMean,
+                        "avg":avgToAlignValues,
+                        "std":stdToAlignValues,
+                        "max":maxToAlignValues,
+                        "min":minToAlignValues,
+                        "p2p":maxToAlignValues-minToAlignValues,
                         "n_trimmed":n_trimmed
                         },
                     ignore_index=True)

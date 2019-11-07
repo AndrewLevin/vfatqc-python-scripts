@@ -468,6 +468,10 @@ def iterTrim(args):
                 "--maxIter={}".format(args.maxIter),
                 "--nevts={}".format(args.nevts),
                 "--vfatmask=0x{:x}".format(args.vfatmask if (args.vfatmask is not None) else amcBoard.getLinkVFATMask(ohN) ),
+                "--sigmaOffset={}".format(args.sigmaOffset),
+                "--highTrimCutoff={}".format(args.highTrimCutoff),
+                "--highTrimWeight={}".format(args.highTrimWeight),
+                "--highNoiseCut={}".format(args.highNoiseCut)                
                 ]
 
         # debug flag raised?
@@ -788,6 +792,11 @@ if __name__ == '__main__':
     parser_itertrim.add_argument("--vfatmask",type=parseInt,default=None,help="If specified this will use this VFAT mask for all unmasked OH's in ohMask.  Here this is a 24 bit number, where a 1 in the N^th bit means ignore the N^th VFAT.  If this argument is not specified VFAT masks are determined at runtime automatically.")
     parser_itertrim.add_argument("--armDAC",type=int,help="CFG_THR_ARM_DAC value to write to all VFATs. If not provided we will look under $DATA_PATH/configs for a vfatConfig_<DetectorName>.txt file where DetectorNames are from the chamber_config dictionary")
 
+    parser_itertrim.add_argument("--sigmaOffset", type=int, help="Will align the mean - sigmaOffset*sigma", default=0)
+    parser_itertrim.add_argument("--highTrimCutoff", type=int, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=63)
+    parser_itertrim.add_argument("--highTrimWeight", type=int, help="Will apply this weight to channels that have a trim value above the cutoff", default=50)
+    parser_itertrim.add_argument("--highNoiseCut", type=float, default=1.5, help="Threshold in fC for masking the channel due to high noise")
+    
     parser_itertrim.set_defaults(func=iterTrim)
     
     # Check env
