@@ -168,11 +168,13 @@ if __name__ == '__main__':
     parser.add_argument("-d","--debug", action="store_true", help="Prints additional debugging information")
     parser.add_argument("-l","--latency", type=int, help="CFG_LATENCY value to be used",default=33)
     parser.add_argument("-m","--maxIter", type=int, help="Maximum number of iterations to perform (e.g. number of scurves to take)", default=4)
+
+    from gempython.gemplotting.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
     
-    parser.add_argument("--sigmaOffset", type=int, help="Will align the mean - sigmaOffset*sigma", default=0)
-    parser.add_argument("--highTrimCutoff", type=int, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=63)
-    parser.add_argument("--highTrimWeight", type=int, help="Will apply this weight to channels that have a trim value above the cutoff", default=50)    
-    parser.add_argument("--highNoiseCut", type=float, default=1.5, help="Threshold in fC for masking the channel due to high noise")
+    parser.add_argument("--sigmaOffset", type=float, help="Will align the mean - sigmaOffset*sigma", sigmaOffsetDefault)
+    parser.add_argument("--highTrimCutoff", type=float, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", highTrimCutoffDefault)
+    parser.add_argument("--highTrimWeight", type=float, help="Will apply this weight to channels that have a trim value above the cutoff", highTrimWeightDefault)    
+    parser.add_argument("--highNoiseCut", type=float, help="Threshold in fC for masking the channel due to high noise", default=highNoiseCutDefault)
     
     parser.add_argument("-n","--nevts",type=int,default=100,help="Number of events for each scan position")
     parser.add_argument("-p","--pulseStretch", type=int, help="CFG_PULSE_STRETCH value to be used",default=3)
