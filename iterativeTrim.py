@@ -171,7 +171,7 @@ if __name__ == '__main__':
 
     from gempython.gemplotting.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
     
-    parser.add_argument("--sigmaOffset", type=float, help="Will align the mean - sigmaOffset*sigma", sigmaOffsetDefault)
+    parser.add_argument("--sigmaOffset", type=float, help="Will align the mean + sigmaOffset*sigma", sigmaOffsetDefault)
     parser.add_argument("--highTrimCutoff", type=float, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", highTrimCutoffDefault)
     parser.add_argument("--highTrimWeight", type=float, help="Will apply this weight to channels that have a trim value above the cutoff", highTrimWeightDefault)    
     parser.add_argument("--highNoiseCut", type=float, help="Threshold in fC for masking the channel due to high noise", default=highNoiseCutDefault)
