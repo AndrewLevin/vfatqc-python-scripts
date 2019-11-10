@@ -171,12 +171,12 @@ if __name__ == '__main__':
 
     from gempython.gemplotting.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
     
-    parser.add_argument("--sigmaOffset", type=float, help="Will align the mean + sigmaOffset*sigma", sigmaOffsetDefault)
-    parser.add_argument("--highTrimCutoff", type=float, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", highTrimCutoffDefault)
-    parser.add_argument("--highTrimWeight", type=float, help="Will apply this weight to channels that have a trim value above the cutoff", highTrimWeightDefault)    
+    parser.add_argument("--sigmaOffset", type=float, help="Will align the mean + sigmaOffset*sigma", default=sigmaOffsetDefault)
+    parser.add_argument("--highTrimCutoff", type=float, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=highTrimCutoffDefault)
+    parser.add_argument("--highTrimWeight", type=float, help="Will apply this weight to channels that have a trim value above the cutoff", default=highTrimWeightDefault)    
     parser.add_argument("--highNoiseCut", type=float, help="Threshold in fC for masking the channel due to high noise", default=highNoiseCutDefault)
     
-    parser.add_argument("-n","--nevts",type=int,default=100,help="Number of events for each scan position")
+#    parser.add_argument("-n","--nevts",type=int,default=100,help="Number of events for each scan position")
     parser.add_argument("-p","--pulseStretch", type=int, help="CFG_PULSE_STRETCH value to be used",default=3)
     parser.add_argument("-v","--vfatmask",type=parseInt,default=0x0,help="Specifies which VFATs, if any, should be masked.  Here this is a 24 bit number, where a 1 in the N^th bit means ignore the N^th VFAT.")
     parser.add_argument("-z","--zeroChan",action="store_true",help="Zero all channel registers before beginning iterative trim procedure")
