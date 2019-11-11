@@ -795,7 +795,7 @@ if __name__ == '__main__':
     from gempython.gemplotting.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
     
     parser_itertrim.add_argument("--sigmaOffset", type=float, help="Will align the mean + sigmaOffset*sigma", default=sigmaOffsetDefault)
-    parser_itertrim.add_argument("--highTrimCutoff", type=float, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=highTrimCutoffDefault)
+    parser_itertrim.add_argument("--highTrimCutoff", type=int, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=highTrimCutoffDefault)
     parser_itertrim.add_argument("--highTrimWeight", type=float, help="Will apply this weight to channels that have a trim value above the cutoff", default=highTrimWeightDefault)
     parser_itertrim.add_argument("--highNoiseCut", type=float, help="Threshold in fC for masking the channel due to high noise",default=highNoiseCutDefault)
     
