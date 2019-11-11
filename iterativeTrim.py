@@ -169,7 +169,7 @@ if __name__ == '__main__':
     parser.add_argument("-l","--latency", type=int, help="CFG_LATENCY value to be used",default=33)
     parser.add_argument("-m","--maxIter", type=int, help="Maximum number of iterations to perform (e.g. number of scurves to take)", default=4)
 
-    from gempython.gemplotting.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
+    from gempython.vfatqc.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
     
     parser.add_argument("--sigmaOffset", type=float, help="Will align the mean + sigmaOffset*sigma", default=sigmaOffsetDefault)
     parser.add_argument("--highTrimCutoff", type=int, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=highTrimCutoffDefault)

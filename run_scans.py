@@ -792,7 +792,7 @@ if __name__ == '__main__':
     parser_itertrim.add_argument("--vfatmask",type=parseInt,default=None,help="If specified this will use this VFAT mask for all unmasked OH's in ohMask.  Here this is a 24 bit number, where a 1 in the N^th bit means ignore the N^th VFAT.  If this argument is not specified VFAT masks are determined at runtime automatically.")
     parser_itertrim.add_argument("--armDAC",type=int,help="CFG_THR_ARM_DAC value to write to all VFATs. If not provided we will look under $DATA_PATH/configs for a vfatConfig_<DetectorName>.txt file where DetectorNames are from the chamber_config dictionary")
 
-    from gempython.gemplotting.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
+    from gempython.vfatqc.utils.scanInfo  import sigmaOffsetDefault, highTrimCutoffDefault, highTrimWeightDefault, highNoiseCutDefault
     
     parser_itertrim.add_argument("--sigmaOffset", type=float, help="Will align the mean + sigmaOffset*sigma", default=sigmaOffsetDefault)
     parser_itertrim.add_argument("--highTrimCutoff", type=int, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=highTrimCutoffDefault)
