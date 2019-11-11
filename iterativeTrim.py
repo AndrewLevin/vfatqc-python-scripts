@@ -357,7 +357,7 @@ if __name__ == '__main__':
 
             # See equation on step 3 of:
             # https://indico.cern.ch/event/838248/contributions/3515801/attachments/1887448/3112771/VFAT3b_trim.pdf
-            trimDeltas = np.round(weightedMean - (scurveFitResults[0][vfat]+args.sigmaOffset*scurveFitResults[1][vfat])) * 15
+            trimDeltas = np.round((weightedMean - (scurveFitResults[0][vfat]+args.sigmaOffset*scurveFitResults[1][vfat])) * 15)
 
             # Determine number of trimmed channels (e.g. trimDeltas == 0)
             uniqueVals, counts = np.unique(trimDeltas, return_counts=True)
