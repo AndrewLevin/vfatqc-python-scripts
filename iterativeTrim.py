@@ -307,10 +307,17 @@ if __name__ == '__main__':
 
             toAlignValues = []
             toAlignWeights = []            
+            channelMasks = []
+            channelMaskReasons = []
             
             for ch in range(0,128):
                 if scurveFitResults[1][vfat][ch] > args.highNoiseCut:
+                    channelMasks.append(1)
+                    channelMaskReasons.append(0x08)
                     continue
+                else:
+                    channelMasks.append(0)
+                    channelMaskReasons.append(0)
                 
                 if iterNum > 1 and lastTrimDACs[ch] > args.highTrimCutoff: 
                     toAlignValues.append(scurveFitResults[0][vfat][ch] + args.sigmaOffset*scurveFitResults[1][vfat][ch])
@@ -415,7 +422,7 @@ if __name__ == '__main__':
                     ignore_index=True)
 
             # Write this info to chConfig file
-            writeChConfig(chConfig,vfat,vfatIDvals[vfat],currentTrimDACs,currentTrimPols,dict_chanRegArray[iterNum]["MASK"][vfat*128:(vfat+1)*128],arrayMaskReason[vfat*128:(vfat+1)*128])
+            writeChConfig(chConfig,vfat,vfatIDvals[vfat],currentTrimDACs,currentTrimPols,channelMasks,channelMaskReasons)
             pass # end loop over VFATs
 
         chConfig.close()
