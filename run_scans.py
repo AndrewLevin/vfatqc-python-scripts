@@ -417,7 +417,7 @@ def trimChamberV3(args):
 
 def iterTrim(args):
     """
-    Launches a call of iterativeTrim.py
+    Launches a call of iterativeTrimParallel.py
     
     args - object returned by argparse.ArgumentParser.parse_args() 
     """
@@ -438,7 +438,6 @@ def iterTrim(args):
             continue
    
         ohKey = (args.shelf,args.slot,ohN)
-        print("iterativeTrimming shelf{0} slot{1} OH{2} detector {3}".format(args.shelf,args.slot,ohN,chamber_config[ohKey]))
         
         # Get & make the output directory
         dirPath = makeScanDir(args.slot, ohN, "iterTrim", startTime, args.shelf)
@@ -454,46 +453,49 @@ def iterTrim(args):
                 calDacCalFile))
             continue
 
-        # Get base command
-        cmd = [
-                "iterativeTrim.py",
-                "{}".format(args.shelf),
-                "{}".format(args.slot),
-                "{}".format(ohN),
-                "--calFileCAL={}".format(calDacCalFile),
-                "--chMax={}".format(args.chMax),
-                "--chMin={}".format(args.chMin),
-                "--dirPath={}".format(dirPath),
-                "--latency={}".format(args.latency),
-                "--maxIter={}".format(args.maxIter),
-                "--nevts={}".format(args.nevts),
-                "--vfatmask=0x{:x}".format(args.vfatmask if (args.vfatmask is not None) else amcBoard.getLinkVFATMask(ohN) ),
-                "--sigmaOffset={}".format(args.sigmaOffset),
-                "--highTrimCutoff={}".format(args.highTrimCutoff),
-                "--highTrimWeight={}".format(args.highTrimWeight),
-                "--highNoiseCut={}".format(args.highNoiseCut)                
-                ]
-
-        # debug flag raised?
-        if args.debug:
-            cmd.append("-d")
+    print("iterativeTrimming shelf{0} slot{1} 0x{2:x}".format(args.shelf,args.slot,args.ohMask,chamber_config[ohKey]))
         
-        # Additional optional arguments
-        if args.armDAC is not None:
-            cmd.append("--armDAC={}".format(args.armDAC))
-        else:
-            # Check to see if a vfatConfig exists
-            vfatConfigFile = "{0}/configs/vfatConfig_{1}.txt".format(dataPath,chamber_config[ohKey])
-            if os.path.isfile(vfatConfigFile):
-                cmd.append("--vfatConfig={}".format(vfatConfigFile))
-                pass
-            pass
+    # Get base command
+    cmd = [
+        "iterativeTrimParallel.py",
+        "{}".format(args.shelf),
+        "{}".format(args.slot),
+        "0x{:x}".format(args.ohMask),
+        "--chMax={}".format(args.chMax),
+        "--chMin={}".format(args.chMin),
+        "--latency={}".format(args.latency),
+        "--maxIter={}".format(args.maxIter),
+        "--nevts={}".format(args.nevts),
+        "--vfatmask=0x{:x}".format(args.vfatmask if (args.vfatmask is not None) else amcBoard.getLinkVFATMask(ohN) ),
+        "--sigmaOffset={}".format(args.sigmaOffset),
+        "--highTrimCutoff={}".format(args.highTrimCutoff),
+        "--highTrimWeight={}".format(args.highTrimWeight),
+        "--highNoiseCut={}".format(args.highNoiseCut)                
+    ]
 
-        # Execute
-        executeCmd(cmd,dirPath)
-        print("Finished iterativeTrimming shelf{0} slot{1} OH{2} detector {3}".format(args.shelf,args.slot,ohN,chamber_config[ohKey]))
+    # debug flag raised?
+    if args.debug:
+        cmd.append("-d")
 
-    print("Finished iterativeTrimming all optohybrids on shelf{0} slot{1} in ohMask: 0x{2:x}".format(args.shelf,args.slot,args.ohMask))
+    # add calFile flag
+    if args.calFileCAL:
+        cmd.append("--calFileCAL")        
+        
+    # Additional optional arguments
+    if args.armDAC is not None:
+        cmd.append("--armDAC={}".format(args.armDAC))
+
+    # add CPU usage flag
+    if args.light:
+        cmd.append("--light")
+    if args.medium:
+        cmd.append("--medium")
+    if args.heavy:
+        cmd.append("--heavy")                
+        
+    # Execute
+    executeCmd(cmd,dirPath)
+    print("Finished iterativeTrimming on shelf{0} slot{1} in ohMask: 0x{2:x}".format(args.shelf,args.slot,args.ohMask))
 
     return
 
@@ -783,6 +785,7 @@ if __name__ == '__main__':
     
     # Create subparser for iterativeTrim
     parser_itertrim = subparserCmds.add_parser("itertrim", help="Launches a trim run using the iterativeTrim.py tool", parents = [parent_parser])
+    parser_itertrim.add_argument("--calFileCAL", action="store_true", help="Get the calibration constants for CFG_CAL_DAC from calibration files in standard locations (DATA_PATH/DETECTOR_NAME/calFile_calDac_DETECTOR_NAME.txt); if not provided a DB query will be performed at runtime to extract this information based on VFAT ChipIDs", default=None)
     parser_itertrim.add_argument("--chMax",type=int,default=127,help="Specify maximum channel number to scan")
     parser_itertrim.add_argument("--chMin",type=int,default=0,help="Specify minimum channel number to scan")
     parser_itertrim.add_argument("-l","--latency",type=int,default=33,help="Setting of CFG_LATENCY register")
@@ -798,6 +801,13 @@ if __name__ == '__main__':
     parser_itertrim.add_argument("--highTrimCutoff", type=int, help="Will weight channels that have a trim value above this (when set to 63, has no effect)", default=highTrimCutoffDefault)
     parser_itertrim.add_argument("--highTrimWeight", type=float, help="Will apply this weight to channels that have a trim value above the cutoff", default=highTrimWeightDefault)
     parser_itertrim.add_argument("--highNoiseCut", type=float, help="Threshold in fC for masking the channel due to high noise",default=highNoiseCutDefault)
+
+    # Parser for specifying parallel analysis behavior
+    # Need double percent signs, see: https://thomas-cokelaer.info/blog/2014/03/python-argparse-issues-with-the-help-argument-typeerror-o-format-a-number-is-required-not-dict/
+    itertrim_cpu_group = parser_itertrim.add_mutually_exclusive_group(required=True)
+    itertrim_cpu_group.add_argument("--light", action="store_true", help="Analysis uses only 25%% of available cores")
+    itertrim_cpu_group.add_argument("--medium", action="store_true", help="Analysis uses only 50%% of available cores")
+    itertrim_cpu_group.add_argument("--heavy", action="store_true", help="Analysis uses only 75%% of available cores")
     
     parser_itertrim.set_defaults(func=iterTrim)
     
