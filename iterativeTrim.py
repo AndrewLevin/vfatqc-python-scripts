@@ -12,7 +12,8 @@ import ROOT as r
 from gempython.utils.gemlogger import printGreen, printYellow, printRed
 from gempython.vfatqc.utils.qcutilities import getCardName
 from gempython.tools.amc_user_functions_xhal import HwAMC
-from gempython.gemplotting.mapping.chamberInfo import chamber_config, GEBtype
+from gempython.gemplotting.mapping.chamberInfo import chamber_config, GEBtype, CHANNELS_PER_VFAT
+from gempython.tools.hw_constants import vfatsPerGemVariant
 
 def iterativeTrim(args,dict_dirPaths,identifier,dict_chanRegData=None,dict_calFiles=None):
     """
@@ -39,11 +40,13 @@ def iterativeTrim(args,dict_dirPaths,identifier,dict_chanRegData=None,dict_calFi
 
     dictOfFiles = {}
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue    
 
+        ohKey = (args.shelf,args.slot,ohN)
+        
         # Get Channel Register Info
         if dict_chanRegData is None:
             setChanRegs = False
@@ -51,14 +54,13 @@ def iterativeTrim(args,dict_dirPaths,identifier,dict_chanRegData=None,dict_calFi
             cArray_trimPol = None
         else:
             setChanRegs = True
-            cArray_trimVal = (c_uint32 * 3072)(*dict_chanRegData[ohN]["ARM_TRIM_AMPLITUDE"])
-            cArray_trimPol = (c_uint32 * 3072)(*dict_chanRegData[ohN]["ARM_TRIM_POLARITY"])
+            cArray_trimVal = (c_uint32*vfatsPerGemVariant[GEBtype[ohKey]]*CHANNELS_PER_VFAT)(*dict_chanRegData[ohN]["ARM_TRIM_AMPLITUDE"])
+            cArray_trimPol = (c_uint32*vfatsPerGemVariant[GEBtype[ohKey]]*CHANNELS_PER_VFAT)(*dict_chanRegData[ohN]["ARM_TRIM_POLARITY"])
             pass
         
         # Set filename of this scurve
         isZombie = True
         filename = "{:s}/SCurveData_{:s}.root".format(dict_dirPaths[ohN],identifier)
-        ohKey = (args.shelf,args.slot,ohN)
         dictOfFiles[ohKey] = (filename,chamber_config[ohKey],GEBtype[ohKey])
         if os.path.isfile(filename):
             scurveRawFile = r.TFile(filename,"READ")
@@ -160,7 +162,7 @@ def iterativeTrim(args,dict_dirPaths,identifier,dict_chanRegData=None,dict_calFi
 
     scurveFitResults = {}    
         
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue    
@@ -290,7 +292,7 @@ if __name__ == '__main__':
     
     startTime = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")
     
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -305,7 +307,7 @@ if __name__ == '__main__':
     # Declare the hardware board
     cardName = getCardName(args.shelf,args.slot)
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -355,7 +357,7 @@ if __name__ == '__main__':
     # Get initial channel registers
     if args.zeroChan:
         print("zero'ing all channel registers on shelf{0} slot{1} in ohMask: 0x{2:x}".format(args.shelf,args.slot,args.ohMask))
-        for ohN in range(0,amcBoard.nOHs+1):
+        for ohN in range(0,amcBoard.nOHs):
             # Skip masked OH's
             if( not ((args.ohMask >> ohN) & 0x1)):
                 continue
@@ -387,7 +389,7 @@ if __name__ == '__main__':
     dict_chanRegArray[0] = {}
     
     #initialize bookkeeping information
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -410,17 +412,19 @@ if __name__ == '__main__':
 
         dict_chanRegArray[iterNum]={}
         
-        for ohN in range(0,amcBoard.nOHs+1):
+        for ohN in range(0,amcBoard.nOHs):
             # Skip masked OH's
             if( not ((args.ohMask >> ohN) & 0x1)):
                 continue
+
+            ohKey = (args.shelf,args.slot,ohN)
             
             # Store chConfig info for this iteration
             chConfig = open("{:s}/chConfig_{:s}.txt".format(dict_dirPaths[ohN],identifier),"w")
             chConfig.write('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:trimPolarity/I:mask/I:maskReason/I\n')
 
             # Define current channel register array container
-            currentChanRegArray = np.zeros(3072, dtype=dataType)
+            currentChanRegArray = np.zeros(vfatsPerGemVariant[GEBtype[ohKey]]*CHANNELS_PER_VFAT, dtype=dataType)
             for entry in dataType:
                 if ((entry[0] == "ARM_TRIM_POLARITY") or (entry[0] == "ARM_TRIM_AMPLITUDE")):
                     continue
@@ -572,7 +576,7 @@ if __name__ == '__main__':
 
 
     printYellow("Table of peak-to-peak values of scurve mean positions by VFAT")                
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue

@@ -38,7 +38,7 @@ Positional arguments
 
 .. option:: sbitThresh
 
-    Launches an sbit rate vs. CFG_THR_ARM_DAC scan using the sbitThreshScanParallel.py tool
+    Launches an sbit rate vs. CFG_THR_ARM_DAC scan using the sbitThreshScan.py tool
 
 .. option:: scurve
 
@@ -112,7 +112,7 @@ def checkSbitMappingAndRate(args):
     amcBoard = HwAMC(cardName, args.debug)
     print('opened connection')
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's        
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -258,7 +258,7 @@ def sbitReadOut(args):
     amcBoard = HwAMC(cardName, args.debug)
     print('opened connection')
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's        
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -302,7 +302,7 @@ def sbitReadOut(args):
 
 def sbitThreshScan(args):
     """
-    Launches a call of sbitThreshScanParallel.py
+    Launches a call of sbitThreshScan.py
 
     args - object returned by argparse.ArgumentParser.parse_args() 
     """
@@ -314,7 +314,7 @@ def sbitThreshScan(args):
 
     # Build Command
     cmd = [
-            "sbitThreshScanParallel.py",
+            "sbitThreshScan.py",
             "-f {}/SBitRateData.root".format(dirPath),
             "--scanmax={}".format(args.scanmax),
             "--scanmin={}".format(args.scanmin),
@@ -352,7 +352,7 @@ def trimChamberV3(args):
     # Get DATA_PATH
     dataPath = os.getenv("DATA_PATH")
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's        
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -417,7 +417,7 @@ def trimChamberV3(args):
 
 def iterTrim(args):
     """
-    Launches a call of iterativeTrimParallel.py
+    Launches a call of iterativeTrim.py
     
     args - object returned by argparse.ArgumentParser.parse_args() 
     """
@@ -432,7 +432,7 @@ def iterTrim(args):
     # Get DATA_PATH
     dataPath = os.getenv("DATA_PATH")
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's        
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -457,7 +457,7 @@ def iterTrim(args):
         
     # Get base command
     cmd = [
-        "iterativeTrimParallel.py",
+        "iterativeTrim.py",
         "{}".format(args.shelf),
         "{}".format(args.slot),
         "0x{:x}".format(args.ohMask),
@@ -513,7 +513,7 @@ def ultraLatency(args):
     amcBoard = HwAMC(cardName, args.debug)
     print('opened connection')
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's        
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -583,7 +583,7 @@ def ultraScurve(args):
     print('opened connection')
 
     from gempython.vfatqc.utils.scanUtils import launchSCurve
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's        
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -633,7 +633,7 @@ def ultraThreshold(args):
     amcBoard = HwAMC(cardName, args.debug)
     print('opened connection')
 
-    for ohN in range(0,amcBoard.nOHs+1):
+    for ohN in range(0,amcBoard.nOHs):
         # Skip masked OH's        
         if( not ((args.ohMask >> ohN) & 0x1)):
             continue
@@ -739,8 +739,8 @@ if __name__ == '__main__':
     parser_sbitReadOut.add_argument("--vfatmask",type=parseInt,default=None,help="If specified this will use this VFAT mask for all unmasked OH's in ohMask.  Here this is a 24 bit number, where a 1 in the N^th bit means ignore the N^th VFAT.  If this argument is not specified VFAT masks are determined at runtime automatically.")
     parser_sbitReadOut.set_defaults(func=sbitReadOut)
     
-    # Create subparser for sbitThreshScanParallel
-    parser_sbitThresh = subparserCmds.add_parser("sbitThresh", help="Launches an sbit rate vs. CFG_THR_ARM_DAC scan using the sbitThreshScanParallel.py tool", parents = [parent_parser])
+    # Create subparser for sbitThreshScan
+    parser_sbitThresh = subparserCmds.add_parser("sbitThresh", help="Launches an sbit rate vs. CFG_THR_ARM_DAC scan using the sbitThreshScan.py tool", parents = [parent_parser])
     parser_sbitThresh.add_argument("--scanmin",type=int,default=0,help="Minimum CFG_THR_ARM_DAC")
     parser_sbitThresh.add_argument("--scanmax",type=int,default=255,help="Maximum CFG_THR_ARM_DAC")
     parser_sbitThresh.add_argument("--stepSize",type=int,default=1,help="Step size to use when scanning CFG_THR_ARM_DAC")
